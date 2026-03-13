@@ -1,28 +1,14 @@
 import axios from 'axios';
 import { ApiResponse, Drama } from './types';
 
-// Use a public CORS proxy for external deployments (like Cloudflare Workers)
-// In local development, it will still use the Express proxy if available, 
-// but this ensures it works when deployed statically.
-const MAGMA_BASE_URL = 'https://magma-api.biz.id';
-const CORS_PROXY = 'https://corsproxy.io/?';
-
-const fetchFromApi = async (endpoint: string) => {
-  try {
-    // Try the local proxy first (works in AI Studio)
-    const response = await axios.get(`/api/proxy${endpoint}`, { timeout: 3000 });
-    return response;
-  } catch (error) {
-    // Fallback to public CORS proxy (works on Cloudflare Workers/Pages)
-    const targetUrl = `${MAGMA_BASE_URL}${endpoint}`;
-    const proxyUrl = `${CORS_PROXY}${encodeURIComponent(targetUrl)}`;
-    return await axios.get(proxyUrl);
-  }
-};
+// The API supports CORS natively, so we can fetch directly without a proxy
+const api = axios.create({
+  baseURL: 'https://magma-api.biz.id',
+});
 
 export const getTrending = async (): Promise<Drama[]> => {
   try {
-    const response = await fetchFromApi('/dramabox/trending');
+    const response = await api.get<ApiResponse>('/dramabox/trending');
     return Array.isArray(response.data?.data) ? response.data.data : [];
   } catch {
     return [];
@@ -31,7 +17,7 @@ export const getTrending = async (): Promise<Drama[]> => {
 
 export const getLatest = async (): Promise<Drama[]> => {
   try {
-    const response = await fetchFromApi('/dramabox/latest');
+    const response = await api.get<ApiResponse>('/dramabox/latest');
     return Array.isArray(response.data?.data) ? response.data.data : [];
   } catch {
     return [];
@@ -40,7 +26,7 @@ export const getLatest = async (): Promise<Drama[]> => {
 
 export const getForYou = async (): Promise<Drama[]> => {
   try {
-    const response = await fetchFromApi('/dramabox/foryou');
+    const response = await api.get<ApiResponse>('/dramabox/foryou');
     return Array.isArray(response.data?.data) ? response.data.data : [];
   } catch {
     return [];
@@ -49,7 +35,7 @@ export const getForYou = async (): Promise<Drama[]> => {
 
 export const getRandom = async (): Promise<Drama[]> => {
   try {
-    const response = await fetchFromApi('/dramabox/random');
+    const response = await api.get<ApiResponse>('/dramabox/random');
     return Array.isArray(response.data?.data) ? response.data.data : [];
   } catch {
     return [];
@@ -58,7 +44,7 @@ export const getRandom = async (): Promise<Drama[]> => {
 
 export const getVip = async (): Promise<Drama[]> => {
   try {
-    const response = await fetchFromApi('/dramabox/vip');
+    const response = await api.get<ApiResponse>('/dramabox/vip');
     return Array.isArray(response.data?.data) ? response.data.data : [];
   } catch {
     return [];
@@ -67,7 +53,7 @@ export const getVip = async (): Promise<Drama[]> => {
 
 export const searchDramas = async (query: string): Promise<Drama[]> => {
   try {
-    const response = await fetchFromApi(`/dramabox/search?query=${query}`);
+    const response = await api.get<ApiResponse>(`/dramabox/search?query=${query}`);
     return Array.isArray(response.data?.data) ? response.data.data : [];
   } catch {
     return [];
@@ -76,7 +62,7 @@ export const searchDramas = async (query: string): Promise<Drama[]> => {
 
 export const getPopularSearch = async (): Promise<Drama[]> => {
   try {
-    const response = await fetchFromApi('/dramabox/populersearch');
+    const response = await api.get<ApiResponse>('/dramabox/populersearch');
     return Array.isArray(response.data?.data) ? response.data.data : [];
   } catch {
     return [];
