@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { ApiResponse, Drama } from './types';
 
-const MAGMA_BASE_URL = 'https://magma-api.biz.id';
+// Use local proxy to avoid CORS and adblocker issues
+const MAGMA_BASE_URL = '/api';
 
 const fetchFromApi = async (endpoint: string): Promise<Drama[]> => {
   try {
