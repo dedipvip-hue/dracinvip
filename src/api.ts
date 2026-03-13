@@ -10,7 +10,7 @@ const fetchFromApi = async (endpoint: string): Promise<Drama[]> => {
     
     const response = await axios.get(targetUrl);
     
-    const data = response.data;
+    const data = response.data || {};
     console.log(`Data from ${endpoint}:`, data); // Debugging as requested
     
     // Extract list from result or data

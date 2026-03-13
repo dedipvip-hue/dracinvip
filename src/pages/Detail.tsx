@@ -117,7 +117,7 @@ export default function Detail() {
               sources: [
                 {
                   src: activeEpisode.videoUrl,
-                  type: activeEpisode.videoUrl.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4',
+                  type: typeof activeEpisode.videoUrl === 'string' && activeEpisode.videoUrl.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4',
                 },
               ],
             }}
@@ -129,7 +129,7 @@ export default function Detail() {
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
             <Play className="w-16 h-16 text-white/20 mb-4" />
             <p className="text-gray-400 text-sm">
-              {activeEpisode?.id.endsWith('-ep1') 
+              {activeEpisode?.id?.endsWith('-ep1') 
                 ? 'Video not available' 
                 : 'Episode not available in this API'}
             </p>
@@ -178,7 +178,7 @@ export default function Detail() {
             {drama.protagonist && (
               <p><span className="text-gray-500">Cast:</span> <span className="text-gray-300">{drama.protagonist}</span></p>
             )}
-            {drama.tags && drama.tags.length > 0 && (
+            {drama.tags && Array.isArray(drama.tags) && drama.tags.length > 0 && (
               <p><span className="text-gray-500">Genres:</span> <span className="text-gray-300">{drama.tags.join(', ')}</span></p>
             )}
           </div>
