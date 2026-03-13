@@ -4,6 +4,7 @@ import { searchDramas, getPopularSearch } from '../api';
 import { Drama } from '../types';
 import { Search as SearchIcon, Play, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
+import { getDramaId, getDramaTitle, getDramaCover } from '../utils';
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -88,38 +89,44 @@ export default function Search() {
           
           {Array.isArray(results) && results.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-              {results.map((drama, index) => (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  key={drama.bookId}
-                >
-                  <Link 
-                    to={`/detail/${drama.bookId}`}
-                    className="flex flex-col group"
+              {results.map((drama, index) => {
+                const id = getDramaId(drama);
+                if (!id) return null;
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    key={id}
                   >
-                    <div className="aspect-[2/3] rounded-lg overflow-hidden relative bg-gray-800 mb-2">
-                      <img 
-                        src={drama.coverWap} 
-                        alt={drama.bookName}
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Play className="w-12 h-12 text-white fill-white/20" />
+                    <Link 
+                      to={`/detail/${id}`}
+                      className="flex flex-col group"
+                    >
+                      <div className="aspect-[2/3] rounded-lg overflow-hidden relative bg-gray-800 mb-2">
+                        <img 
+                          src={getDramaCover(drama)} 
+                          alt={getDramaTitle(drama)}
+                          referrerPolicy="no-referrer"
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Play className="w-12 h-12 text-white fill-white/20" />
+                        </div>
+                        {drama.chapterCount && (
+                          <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] px-1.5 py-0.5 rounded">
+                            {drama.chapterCount} Eps
+                          </div>
+                        )}
                       </div>
-                      <div className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] px-1.5 py-0.5 rounded">
-                        {drama.chapterCount} Eps
-                      </div>
-                    </div>
-                    <h3 className="text-sm font-medium text-gray-200 line-clamp-2 group-hover:text-[#E50914] transition-colors">
-                      {drama.bookName}
-                    </h3>
-                  </Link>
-                </motion.div>
-              ))}
+                      <h3 className="text-sm font-medium text-gray-200 line-clamp-2 group-hover:text-[#E50914] transition-colors">
+                        {getDramaTitle(drama)}
+                      </h3>
+                    </Link>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-20 text-gray-400">
@@ -137,15 +144,20 @@ export default function Search() {
           </h2>
           
           <div className="flex flex-wrap gap-3">
-            {Array.isArray(popular) && popular.slice(0, 10).map((drama) => (
-              <Link
-                key={drama.bookId}
-                to={`/search?q=${encodeURIComponent(drama.bookName)}`}
-                className="bg-[#2A2A2A] hover:bg-[#3A3A3A] border border-white/5 text-gray-300 px-4 py-2 rounded-full text-sm transition-colors"
-              >
-                {drama.bookName}
-              </Link>
-            ))}
+            {Array.isArray(popular) && popular.slice(0, 10).map((drama) => {
+              const id = getDramaId(drama);
+              const title = getDramaTitle(drama);
+              if (!id) return null;
+              return (
+                <Link
+                  key={id}
+                  to={`/search?q=${encodeURIComponent(title)}`}
+                  className="bg-[#2A2A2A] hover:bg-[#3A3A3A] border border-white/5 text-gray-300 px-4 py-2 rounded-full text-sm transition-colors"
+                >
+                  {title}
+                </Link>
+              );
+            })}
           </div>
         </div>
       )}

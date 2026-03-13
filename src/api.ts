@@ -1,72 +1,61 @@
 import axios from 'axios';
 import { ApiResponse, Drama } from './types';
 
-// The API supports CORS natively, so we can fetch directly without a proxy
-const api = axios.create({
-  baseURL: 'https://magma-api.biz.id',
-});
+const MAGMA_BASE_URL = 'https://www.magma-api.biz.id';
+const ALL_ORIGINS_PROXY = 'https://api.allorigins.win/get?url=';
 
-export const getTrending = async (): Promise<Drama[]> => {
+const fetchFromApi = async (endpoint: string): Promise<Drama[]> => {
   try {
-    const response = await api.get<ApiResponse>('/dramabox/trending');
-    return Array.isArray(response.data?.data) ? response.data.data : [];
-  } catch {
+    const targetUrl = `${MAGMA_BASE_URL}${endpoint}`;
+    const proxyUrl = `${ALL_ORIGINS_PROXY}${encodeURIComponent(targetUrl)}`;
+    
+    const response = await axios.get(proxyUrl);
+    
+    // AllOrigins returns the actual response as a string in `contents`
+    let data: any;
+    if (response.data && response.data.contents) {
+      data = JSON.parse(response.data.contents);
+    } else {
+      data = response.data;
+    }
+    
+    console.log(`Data from ${endpoint}:`, data); // Debugging as requested
+    
+    // Extract list from result or data
+    const list = data.result || data.data || [];
+    return Array.isArray(list) ? list : [];
+  } catch (error) {
+    console.error(`Error fetching ${endpoint}:`, error);
     return [];
   }
+};
+
+export const getTrending = async (): Promise<Drama[]> => {
+  return await fetchFromApi('/dramabox/trending');
 };
 
 export const getLatest = async (): Promise<Drama[]> => {
-  try {
-    const response = await api.get<ApiResponse>('/dramabox/latest');
-    return Array.isArray(response.data?.data) ? response.data.data : [];
-  } catch {
-    return [];
-  }
+  return await fetchFromApi('/dramabox/latest');
 };
 
 export const getForYou = async (): Promise<Drama[]> => {
-  try {
-    const response = await api.get<ApiResponse>('/dramabox/foryou');
-    return Array.isArray(response.data?.data) ? response.data.data : [];
-  } catch {
-    return [];
-  }
+  return await fetchFromApi('/dramabox/foryou');
 };
 
 export const getRandom = async (): Promise<Drama[]> => {
-  try {
-    const response = await api.get<ApiResponse>('/dramabox/random');
-    return Array.isArray(response.data?.data) ? response.data.data : [];
-  } catch {
-    return [];
-  }
+  return await fetchFromApi('/dramabox/random');
 };
 
 export const getVip = async (): Promise<Drama[]> => {
-  try {
-    const response = await api.get<ApiResponse>('/dramabox/vip');
-    return Array.isArray(response.data?.data) ? response.data.data : [];
-  } catch {
-    return [];
-  }
+  return await fetchFromApi('/dramabox/vip');
 };
 
 export const searchDramas = async (query: string): Promise<Drama[]> => {
-  try {
-    const response = await api.get<ApiResponse>(`/dramabox/search?query=${query}`);
-    return Array.isArray(response.data?.data) ? response.data.data : [];
-  } catch {
-    return [];
-  }
+  return await fetchFromApi(`/dramabox/search?query=${encodeURIComponent(query)}`);
 };
 
 export const getPopularSearch = async (): Promise<Drama[]> => {
-  try {
-    const response = await api.get<ApiResponse>('/dramabox/populersearch');
-    return Array.isArray(response.data?.data) ? response.data.data : [];
-  } catch {
-    return [];
-  }
+  return await fetchFromApi('/dramabox/populersearch');
 };
 
 // Mocking detail and episodes since the exact endpoint is unknown
@@ -74,11 +63,11 @@ export const getDetail = async (id: string): Promise<Drama | null> => {
   try {
     // Try to fetch from trending first as a fallback to find the drama
     const trending = await getTrending();
-    const drama = trending.find(d => d.bookId === id);
+    const drama = trending.find(d => (d.bookId === id || d.id === id));
     if (drama) return drama;
     
     const latest = await getLatest();
-    const dramaLatest = latest.find(d => d.bookId === id);
+    const dramaLatest = latest.find(d => (d.bookId === id || d.id === id));
     if (dramaLatest) return dramaLatest;
     
     return null;

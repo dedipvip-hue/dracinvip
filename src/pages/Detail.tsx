@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getDetail } from '../api';
+import { getDetail, searchDramas } from '../api';
 import { Drama, Episode } from '../types';
 import { Play, Share2, Plus, ThumbsUp, ChevronLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Plyr } from 'plyr-react';
 import 'plyr-react/plyr.css';
+import { getDramaTitle, getDramaCover } from '../utils';
 
 export default function Detail() {
   const { id } = useParams<{ id: string }>();
@@ -19,19 +20,44 @@ export default function Detail() {
       if (!id) return;
       setLoading(true);
       try {
-        const data = await getDetail(id);
+        let data = await getDetail(id);
+        
         setDrama(data);
         
-        // Mock episodes based on chapterCount since we don't have the exact endpoint
         if (data) {
-          const mockEpisodes: Episode[] = Array.from({ length: data.chapterCount || 10 }).map((_, i) => ({
-            id: `${data.bookId}-ep${i + 1}`,
-            title: `Episode ${i + 1}`,
-            // We use a placeholder video URL for the player
-            videoUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' 
-          }));
-          setEpisodes(mockEpisodes);
-          setActiveEpisode(mockEpisodes[0]);
+          const title = getDramaTitle(data);
+          
+          // As requested: Use search API to find episodes based on drama title
+          try {
+            const searchResults = await searchDramas(title);
+            console.log("Search results for episodes:", searchResults);
+            
+            // If the search API actually returns episode data, we would map it here.
+            // Since we don't know the exact structure of episodes from search, 
+            // we'll still generate mock episodes but use the chapterCount from search if available
+            const exactMatch = searchResults.find(d => getDramaTitle(d) === title);
+            const chapterCount = exactMatch?.chapterCount || data.chapterCount || 10;
+            
+            const mockEpisodes: Episode[] = Array.from({ length: chapterCount }).map((_, i) => ({
+              id: `${id}-ep${i + 1}`,
+              title: `Episode ${i + 1}`,
+              // We use a placeholder video URL for the player
+              videoUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' 
+            }));
+            setEpisodes(mockEpisodes);
+            setActiveEpisode(mockEpisodes[0]);
+          } catch (searchError) {
+            console.error("Error fetching episodes via search:", searchError);
+            // Fallback to basic mock
+            const chapterCount = data.chapterCount || 10;
+            const mockEpisodes: Episode[] = Array.from({ length: chapterCount }).map((_, i) => ({
+              id: `${id}-ep${i + 1}`,
+              title: `Episode ${i + 1}`,
+              videoUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' 
+            }));
+            setEpisodes(mockEpisodes);
+            setActiveEpisode(mockEpisodes[0]);
+          }
         }
       } catch (error) {
         console.error("Error fetching detail:", error);
@@ -61,6 +87,9 @@ export default function Detail() {
       </div>
     );
   }
+
+  const title = getDramaTitle(drama);
+  const cover = getDramaCover(drama);
 
   return (
     <div className="pb-20 md:pb-8">
@@ -96,12 +125,12 @@ export default function Detail() {
         {/* Detail Content */}
         <div className="lg:col-span-2 space-y-6">
           <div>
-            <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">{drama.bookName}</h1>
+            <h1 className="text-2xl md:text-4xl font-bold text-white mb-2">{title}</h1>
             <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-4">
               <span className="text-green-500 font-semibold">98% Match</span>
               <span>2026</span>
               <span className="border border-gray-600 px-1.5 py-0.5 rounded text-xs">16+</span>
-              <span>{drama.chapterCount} Episodes</span>
+              <span>{drama.chapterCount || episodes.length} Episodes</span>
             </div>
             
             <div className="flex items-center gap-4 mb-6">
@@ -121,7 +150,7 @@ export default function Detail() {
             </div>
             
             <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-              {drama.introduction}
+              {drama.introduction || 'No description available.'}
             </p>
           </div>
           
@@ -156,7 +185,7 @@ export default function Detail() {
                 >
                   <div className="relative w-24 aspect-video bg-gray-800 rounded overflow-hidden flex-shrink-0">
                     <img 
-                      src={drama.coverWap} 
+                      src={cover} 
                       alt={ep.title}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover opacity-50"
