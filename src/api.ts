@@ -1,24 +1,15 @@
 import axios from 'axios';
 import { ApiResponse, Drama } from './types';
 
-const MAGMA_BASE_URL = 'https://www.magma-api.biz.id';
-const ALL_ORIGINS_PROXY = 'https://api.allorigins.win/get?url=';
+const MAGMA_BASE_URL = 'https://magma-api.biz.id';
 
 const fetchFromApi = async (endpoint: string): Promise<Drama[]> => {
   try {
     const targetUrl = `${MAGMA_BASE_URL}${endpoint}`;
-    const proxyUrl = `${ALL_ORIGINS_PROXY}${encodeURIComponent(targetUrl)}`;
     
-    const response = await axios.get(proxyUrl);
+    const response = await axios.get(targetUrl);
     
-    // AllOrigins returns the actual response as a string in `contents`
-    let data: any;
-    if (response.data && response.data.contents) {
-      data = JSON.parse(response.data.contents);
-    } else {
-      data = response.data;
-    }
-    
+    const data = response.data;
     console.log(`Data from ${endpoint}:`, data); // Debugging as requested
     
     // Extract list from result or data
