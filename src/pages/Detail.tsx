@@ -32,28 +32,26 @@ export default function Detail() {
             const searchResults = await searchDramas(title);
             console.log("Search results for episodes:", searchResults);
             
-            // If the search API actually returns episode data, we would map it here.
-            // Since we don't know the exact structure of episodes from search, 
-            // we'll still generate mock episodes but use the chapterCount from search if available
             const exactMatch = searchResults.find(d => getDramaTitle(d) === title);
-            const chapterCount = exactMatch?.chapterCount || data.chapterCount || 10;
+            const chapterCount = exactMatch?.chapterCount || exactMatch?.totalChapterNum || data.chapterCount || data.totalChapterNum || 10;
             
+            // Map real video URL if available in the API response, otherwise leave empty
+            // We remove the hardcoded test stream (cartoon) to avoid confusion
             const mockEpisodes: Episode[] = Array.from({ length: chapterCount }).map((_, i) => ({
               id: `${id}-ep${i + 1}`,
               title: `Episode ${i + 1}`,
-              // We use a placeholder video URL for the player
-              videoUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' 
+              // Only the first episode has the video URL in the drama list API
+              videoUrl: i === 0 ? (exactMatch?.videoPath || data?.videoPath || '') : '' 
             }));
             setEpisodes(mockEpisodes);
             setActiveEpisode(mockEpisodes[0]);
           } catch (searchError) {
             console.error("Error fetching episodes via search:", searchError);
-            // Fallback to basic mock
-            const chapterCount = data.chapterCount || 10;
+            const chapterCount = data.chapterCount || data.totalChapterNum || 10;
             const mockEpisodes: Episode[] = Array.from({ length: chapterCount }).map((_, i) => ({
               id: `${id}-ep${i + 1}`,
               title: `Episode ${i + 1}`,
-              videoUrl: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8' 
+              videoUrl: i === 0 ? (data?.videoPath || '') : '' 
             }));
             setEpisodes(mockEpisodes);
             setActiveEpisode(mockEpisodes[0]);
@@ -95,14 +93,14 @@ export default function Detail() {
     <div className="pb-20 md:pb-8">
       {/* Video Player Section */}
       <div className="w-full bg-black aspect-video md:h-[60vh] relative">
-        {activeEpisode ? (
+        {activeEpisode && activeEpisode.videoUrl ? (
           <Plyr 
             source={{
               type: 'video',
               sources: [
                 {
-                  src: activeEpisode.videoUrl || '',
-                  type: 'application/x-mpegURL',
+                  src: activeEpisode.videoUrl,
+                  type: activeEpisode.videoUrl.includes('.m3u8') ? 'application/x-mpegURL' : 'video/mp4',
                 },
               ],
             }}
@@ -111,8 +109,13 @@ export default function Detail() {
             }}
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-            <Play className="w-16 h-16 text-white/20" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900">
+            <Play className="w-16 h-16 text-white/20 mb-4" />
+            <p className="text-gray-400 text-sm">
+              {activeEpisode?.id.endsWith('-ep1') 
+                ? 'Video not available' 
+                : 'Episode not available in this API'}
+            </p>
           </div>
         )}
         
@@ -130,7 +133,7 @@ export default function Detail() {
               <span className="text-green-500 font-semibold">98% Match</span>
               <span>2026</span>
               <span className="border border-gray-600 px-1.5 py-0.5 rounded text-xs">16+</span>
-              <span>{drama.chapterCount || episodes.length} Episodes</span>
+              <span>{drama.chapterCount || drama.totalChapterNum || episodes.length} Episodes</span>
             </div>
             
             <div className="flex items-center gap-4 mb-6">
@@ -202,7 +205,9 @@ export default function Detail() {
                     <h4 className={`text-sm font-medium truncate ${activeEpisode?.id === ep.id ? 'text-white' : 'text-gray-300'}`}>
                       {ep.title}
                     </h4>
-                    <p className="text-xs text-gray-500 mt-1">24m</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {ep.videoUrl ? 'Available' : 'Not available'}
+                    </p>
                   </div>
                 </button>
               ))}

@@ -8,12 +8,14 @@ export interface Drama {
   cover?: string;
   verticalImage?: string;
   chapterCount?: number;
+  totalChapterNum?: number;
   introduction?: string;
   tags?: string[];
   protagonist?: string;
   corner?: {
     name?: string;
   };
+  videoPath?: string;
 }
 
 export interface ApiResponse {
