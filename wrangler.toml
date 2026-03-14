@@ -1,0 +1,7 @@
+name = "dracin-worker"
+main = "src/dracin.js"
+compatibility_date = "2024-03-14"
+
+[dev]
+port = 3000
+ip = "0.0.0.0"
